@@ -15,7 +15,7 @@
 
                 {{schema}}
 
-                Make sure to return an instance of the JSON, not the schema itselfHi there, {{name}}."
+                Make sure to return an instance of only the JSON, not the schema itself and no text explaining the JSON"
                     {:schema (json-schema/transform schema)}))
 
 
