@@ -17,6 +17,7 @@ Built on top of [Malli](https://github.com/metosin/malli) for defining schemas.
 (ic/llm->response "John Doe is 30 years old."
                   User
                   :api-key "<API-KEY>")
+; => {:name "John Doe", :age 30}
 ```
 
 
