@@ -1,4 +1,7 @@
 # instructor-clj
+
+[![Clojars Project](https://img.shields.io/clojars/v/org.clojars.kapil/instructor-clj.svg)](https://clojars.org/org.clojars.kapil/instructor-clj)
+
 instructor-clj is a Clojure lib inspired by [instructor](https://github.com/jxnl/instructor)
 It makes it easy to have structured output from LLMs.
 
