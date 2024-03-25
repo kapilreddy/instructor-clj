@@ -1,8 +1,10 @@
 (ns instructor-clj.core
   (:require [org.httpkit.client :as http]
             [stencil.core :as sc]
+            [malli.core :as m]
             [malli.json-schema :as json-schema]
-            [cheshire.core :as cc]))
+            [cheshire.core :as cc])
+  (:import [com.fasterxml.jackson.core JsonParseException]))
 
 
 (defn schema->system-prompt
@@ -33,17 +35,22 @@
                                                {"role" "user"
                                                 "content" prompt}]
                                   "temperature" 0.7
-                                  "max_tokens" 150})]
-
-    (-> (http/post api-url {:headers headers :body body})
-        deref ;; Dereference the future
-        :body
-        (cc/parse-string true)
-        :choices
-        first
-        :message
-        :content
-        (cc/parse-string true))))
+                                  "max_tokens" 150})
+        response (try
+                   (-> (http/post api-url {:headers headers
+                                           :body body})
+                       deref ;; Dereference the future
+                       :body
+                       (cc/parse-string true)
+                       :choices
+                       first
+                       :message
+                       :content
+                       (cc/parse-string true))
+                   (catch JsonParseException _
+                     ))]
+    (when (m/validate response-schema response)
+      response)))
 
 ;; Example usage
 (comment
