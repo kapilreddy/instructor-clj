@@ -25,17 +25,20 @@
   The function tries to destructure and get the actual response.
   @TODO Add ability to plugin different LLMs
   @TODO Getting response is brittle and not extensible for different LLMs"
-  [prompt response-schema & {:keys [api-key]}]
+  [prompt response-schema & {:keys [api-key max-tokens model temprature]
+                             :or {max-tokens 4097
+                                  temprature 0.7
+                                  model "gpt-3.5-turbo"}}]
   (let [api-url "https://api.openai.com/v1/chat/completions"
         headers {"Authorization" (str "Bearer " api-key)
                  "Content-Type" "application/json"}
-        body (cc/generate-string {"model" "gpt-3.5-turbo"
+        body (cc/generate-string {"model" model
                                   "messages"  [{"role" "system"
                                                 "content" (schema->system-prompt response-schema)}
                                                {"role" "user"
                                                 "content" prompt}]
-                                  "temperature" 0.7
-                                  "max_tokens" 150})
+                                  "temperature" temprature
+                                  "max_tokens" max-tokens})
         response (try
                    (-> (http/post api-url {:headers headers
                                            :body body})
