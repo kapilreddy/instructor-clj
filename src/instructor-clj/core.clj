@@ -39,11 +39,12 @@
                                                 "content" prompt}]
                                   "temperature" temprature
                                   "max_tokens" max-tokens})
+        body (-> (http/post api-url {:headers headers
+                                     :body body})
+                 deref ;; Dereference the future
+                 :body)
         response (try
-                   (-> (http/post api-url {:headers headers
-                                           :body body})
-                       deref ;; Dereference the future
-                       :body
+                   (-> body
                        (cc/parse-string true)
                        :choices
                        first
