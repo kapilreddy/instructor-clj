@@ -23,6 +23,24 @@ Built on top of [Malli](https://github.com/metosin/malli) for defining schemas.
 ; => {:name "John Doe", :age 30}
 ```
 
+```clojure
+(def Meeting
+  [:map
+   [:action [:and {:description "What action is needed"}
+             [:enum "call" "followup"]]]
+   [:person [:and {:description "Person involved in the action"}
+             [:string]]]
+   [:time [:and {:description "Time of the day"}
+           [:string]]]
+   [:day [:and {:description "Day of the week"}
+          [:string]]]])
+
+(llm->response "Call Kapil on Saturday at 12pm"
+               Meeting
+               :api-key api-key
+               :model "gpt-4")
+; => {:action "call", :person "Kapil", :time "12pm", :day "Saturday"}
+```
 
 ## License
 This project is licensed under the terms of the MIT License.
