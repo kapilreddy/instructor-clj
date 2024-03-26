@@ -59,7 +59,8 @@
 ;; Example usage
 (comment
 
-    ;; https://github.com/jxnl/instructor/blob/cea534fd2280371d2778e0f043d3fe557cc7bc7e/instructor/process_response.py#L245C17-L250C83
+  (def api-key "<API-KEY>")
+  ;; https://github.com/jxnl/instructor/blob/cea534fd2280371d2778e0f043d3fe557cc7bc7e/instructor/process_response.py#L245C17-L250C83
 
   (def User
     [:map
@@ -67,5 +68,24 @@
      [:age :int]])
 
   (llm->response "John Doe is 30 years old."
-                  User
-                  :api-key "<API-KEY>"))
+                 User
+                 :api-key api-key)
+
+  (def Meeting
+    [:map
+     [:action [:and {:description "What action is needed"}
+               [:enum "call" "followup"]]]
+     [:person [:and {:description "Person involved in the action"}
+               [:string]]]
+     [:time [:and {:description "Time of the day"}
+             [:string]]]
+     [:day [:and {:description "Day of the week"}
+            [:string]]]])
+
+  (= (llm->response "Call Kapil on Saturday at 12pm"
+                    Meeting
+                    :api-key api-key
+                    :model "gpt-4")
+     {:action "call", :person "Kapil", :time "12pm", :day "Saturday"})
+
+  )
