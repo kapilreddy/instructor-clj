@@ -39,21 +39,24 @@
                                                 "content" prompt}]
                                   "temperature" temprature
                                   "max_tokens" max-tokens})
-        body (-> (http/post api-url {:headers headers
-                                     :body body})
-                 deref ;; Dereference the future
-                 :body)
+        body (try
+               (-> (http/post api-url {:headers headers
+                                       :body body})
+                   deref ;; Dereference the future
+                   :body
+                   (cc/parse-string true))
+               (catch JsonParseException _))
         response (try
                    (-> body
-                       (cc/parse-string true)
                        :choices
                        first
                        :message
                        :content
                        (cc/parse-string true))
                    (catch JsonParseException _))]
-    (when (m/validate response-schema response)
-      response)))
+    (if (m/validate response-schema response)
+      response
+      body)))
 
 ;; Example usage
 (comment
