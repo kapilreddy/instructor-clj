@@ -26,7 +26,7 @@
   @TODO Add ability to plugin different LLMs
   @TODO Getting response is brittle and not extensible for different LLMs"
   [prompt response-schema & {:keys [api-key max-tokens model temprature]
-                             :or {max-tokens 4097
+                             :or {max-tokens 4096
                                   temprature 0.7
                                   model "gpt-3.5-turbo"}}]
   (let [api-url "https://api.openai.com/v1/chat/completions"
@@ -51,8 +51,7 @@
                        :message
                        :content
                        (cc/parse-string true))
-                   (catch JsonParseException _
-                     ))]
+                   (catch JsonParseException _))]
     (when (m/validate response-schema response)
       response)))
 
@@ -86,6 +85,4 @@
                     Meeting
                     :api-key api-key
                     :model "gpt-4")
-     {:action "call", :person "Kapil", :time "12pm", :day "Saturday"})
-
-  )
+     {:action "call", :person "Kapil", :time "12pm", :day "Saturday"}))
