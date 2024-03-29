@@ -38,3 +38,26 @@
                                 "schema"
                                 :api-key "api-key"
                                 :max-retries 5)))))))
+
+
+(deftest test-instruct-pre-condition
+  (testing ":pre condition for api-key"
+    ;; Key is not provided
+    (is (thrown? AssertionError
+                 (icc/instruct "Test prompt" [:map [:key :string]])))
+
+    ;; Key is provided but empty
+    (is (thrown? AssertionError
+                 (icc/instruct "Test prompt" [:map [:key :string]] :api-key "")))
+
+    ;; Key is provided and the function executes
+    (let [response {:name "John Doe" :age 30}
+          User [:map
+                [:name :string]
+                [:age :int]]]
+      (bond/with-stub! [[icc/llm->response (constantly response)]]
+        (is (= response
+               (icc/instruct "John Doe is 30 years old."
+                             User
+                             :api-key "api-key"
+                             :max-retries 0)))))))

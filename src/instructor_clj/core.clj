@@ -77,6 +77,7 @@
                                   model "gpt-3.5-turbo"
                                   temperature 0.7
                                   max-retries 0}}]
+  {:pre [(seq api-key)]}
   (loop [retries-left max-retries]
     (let [response (llm->response {:prompt prompt
                                    :response-schema response-schema
