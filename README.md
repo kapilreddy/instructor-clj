@@ -7,7 +7,7 @@ It makes it easy to have structured output from LLMs.
 
 Built on top of [Malli](https://github.com/metosin/malli) for defining schemas.
 
-# Examples
+## Examples
 
 ```clojure
 (require '[instructor-clj.core :as ic])
@@ -17,9 +17,9 @@ Built on top of [Malli](https://github.com/metosin/malli) for defining schemas.
    [:name :string]
    [:age :int]])
 
-(ic/llm->response "John Doe is 30 years old."
-                  User
-                  :api-key "<API-KEY>")
+(instruct "John Doe is 30 years old."
+          User
+          :api-key "<API-KEY>")
 ; => {:name "John Doe", :age 30}
 ```
 
@@ -35,12 +35,15 @@ Built on top of [Malli](https://github.com/metosin/malli) for defining schemas.
    [:day [:and {:description "Day of the week"}
           [:string]]]])
 
-(llm->response "Call Kapil on Saturday at 12pm"
-               Meeting
-               :api-key api-key
-               :model "gpt-4")
+; With retries:
+(instruct "Call Kapil on Saturday at 12pm"
+          Meeting
+          :api-key api-key
+          :model "gpt-4"
+          :max-retries 2)
 ; => {:action "call", :person "Kapil", :time "12pm", :day "Saturday"}
 ```
 
 ## License
+
 This project is licensed under the terms of the MIT License.
