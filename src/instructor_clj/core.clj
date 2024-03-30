@@ -6,6 +6,9 @@
             [stencil.core :as sc])
   (:import [com.fasterxml.jackson.core JsonParseException]))
 
+(def ^:const default-client-params {:max-tokens 4096
+                                    :temprature 0.7
+                                    :model "gpt-3.5-turbo"})
 
 (defn schema->system-prompt
   "Convert a malli schema into JSON schema and generate a system prompt for responses"
@@ -90,6 +93,58 @@
         (recur (dec retries-left))
         response))))
 
+(defn create-chat-completion
+  "Creates a chat completion using OpenAI API.
+
+   This function takes OpenAI chat completion function as the first argument.
+
+   Second argument is a map with keys :messages, :model, and :response-model.
+   :messages should be a vector of maps, each map representing a message with keys :role and :content.
+   :model specifies the OpenAI model to use for generating completions.
+   :response-model is a map specifying the schema and name of the response model.
+
+   Alternatively the api-key, organization, api-endpoint can be passed in
+   the options argument of each api function.
+   https://github.com/wkok/openai-clojure/blob/main/doc/01-usage-openai.md#options
+
+   Also, request options may be set on the underlying hato http client by adding
+   a :request map to :options for example setting the request timeout.
+   https://github.com/wkok/openai-clojure/blob/main/doc/01-usage-openai.md#request-options
+
+   Example:
+   (require '[instructor-clj.core :as ic])
+   (require '[wkok.openai-clojure.api :as client])
+
+   (def User
+     [:map
+       [:name :string]
+       [:age :int]])
+
+   (ic/create-chat-completion
+    client
+    {:messages [{:role \"user\", :content \"Jason Liu is 30 years old\"}]
+     :model \"gpt-3.5-turbo\"
+     :response-model User})
+
+   Returns a map with extracted information in a structured format."
+  ([chat-completion-fn client-params]
+   (create-chat-completion chat-completion-fn client-params nil))
+  ([chat-completion-fn client-params opts]
+   (let [response-model (:response-model client-params)
+         messages (apply conj
+                         [{:role "system" :content (schema->system-prompt response-model)}]
+                         (:messages client-params))
+         client-params (-> default-client-params
+                           (merge client-params
+                                  {:messages messages})
+                           (dissoc :response-model))
+         body (chat-completion-fn client-params opts)
+         response (parse-generated-body body)]
+     (if (m/validate response-model response)
+       response
+       body))))
+
+
 
 ;; Example usage
 (comment
@@ -123,4 +178,11 @@
                :api-key api-key
                :model "gpt-4"
                :max-retries 2)
-     {:action "call", :person "Kapil", :time "12pm", :day "Saturday"}))
+     {:action "call", :person "Kapil", :time "12pm", :day "Saturday"})
+
+  (require '[wkok.openai-clojure.api :as client])
+  (create-chat-completion client/create-chat-completion
+                          {:messages [{:role "user" :content "Call Kapil on Saturday at 12pm"}]
+                           :response-model Meeting}
+                          {:api-key api-key})
+  )
