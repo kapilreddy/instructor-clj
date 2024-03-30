@@ -9,4 +9,5 @@
    [cheshire "5.12.0"]
    [metosin/malli "0.15.0"]
    [stencil "0.5.0"]
-   [http-kit "2.7.0"]])
+   [http-kit "2.7.0"]
+   [circleci/bond "0.6.0"]])
