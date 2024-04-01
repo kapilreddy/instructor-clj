@@ -17,9 +17,9 @@ Built on top of [Malli](https://github.com/metosin/malli) for defining schemas.
    [:name :string]
    [:age :int]])
 
-(instruct "John Doe is 30 years old."
-          User
-          :api-key "<API-KEY>")
+(ic/instruct "John Doe is 30 years old."
+             User
+             :api-key "<API-KEY>")
 ; => {:name "John Doe", :age 30}
 ```
 
@@ -36,12 +36,42 @@ Built on top of [Malli](https://github.com/metosin/malli) for defining schemas.
           [:string]]]])
 
 ; With retries:
-(instruct "Call Kapil on Saturday at 12pm"
-          Meeting
-          :api-key api-key
-          :model "gpt-4"
-          :max-retries 2)
+(ic/instruct "Call Kapil on Saturday at 12pm"
+             Meeting
+             :api-key api-key
+             :model "gpt-4"
+             :max-retries 2)
 ; => {:action "call", :person "Kapil", :time "12pm", :day "Saturday"}
+```
+
+Use with a OpenAI API compatible custom client like [openai-clojure](https://github.com/wkok/openai-clojure)
+
+```clojure
+(require '[wkok.openai-clojure.api :as client])
+```
+
+Basic usage with client
+
+```clojure
+(ic/create-chat-completion client/create-chat-completion
+                           {:messages [{:role "user" :content "Call Kapil on Saturday at 12pm"}]
+                            :response-model Meeting}
+                           {:api-key api-key})
+; => {:action "call", :person "Kapil", :time "12pm", :day "Saturday"}
+```
+
+Some of the customization options provided by the client
+
+```clojure
+(ic/create-chat-completion client/create-chat-completion
+                           {;; Model related parameters
+                            :model "gpt-4"
+                            :temprature 0.5
+                            :messages [{:role "user" :content "Call Kapil on Saturday at 12pm"}]
+                            :response-model Meeting}
+                           {:api-key api-key
+                            ;; HTTP request parameters
+                            :request {:timeout 60000}})
 ```
 
 ## License
