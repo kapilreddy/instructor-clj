@@ -7,8 +7,9 @@
   (:import [com.fasterxml.jackson.core JsonParseException]))
 
 (def ^:const default-client-params {:max-tokens 4096
-                                    :temprature 0.7
+                                    :temperature 0.7
                                     :model "gpt-3.5-turbo"})
+
 
 (defn schema->system-prompt
   "Convert a malli schema into JSON schema and generate a system prompt for responses"
@@ -93,6 +94,7 @@
         (recur (dec retries-left))
         response))))
 
+
 (defn create-chat-completion
   "Creates a chat completion using OpenAI API.
 
@@ -143,7 +145,6 @@
      (if (m/validate response-model response)
        response
        body))))
-
 
 
 ;; Example usage
