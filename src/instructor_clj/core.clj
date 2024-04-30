@@ -12,7 +12,7 @@
 
 
 (defn schema->system-prompt
-  "Convert a malli schema into JSON schema and generate a system prompt for responses"
+  "Converts a malli schema into JSON schema and generates a system prompt for responses"
   [schema]
   (sc/render-string
    "As a genius expert, your task is to understand the content and provide
@@ -20,7 +20,8 @@
     \n\n
     {{schema}}
     \n\n
-    Make sure to return an instance of only the JSON, not the schema itself and no text explaining the JSON"
+    Make sure to return an instance of only the JSON.
+    Refrain from returning the schema or any text explaining the JSON"
    {:schema (json-schema/transform schema)}))
 
 
