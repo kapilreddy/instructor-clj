@@ -76,19 +76,17 @@
 (defn instruct
   "Attempts to obtain a valid response from the LLM based on the given prompt and schema,
    retrying up to `max-retries` times if necessary."
-  [prompt response-schema & {:keys [api-key max-tokens model temperature max-retries]
-                             :or {max-tokens 4096
-                                  model "gpt-3.5-turbo"
-                                  temperature 0.7
-                                  max-retries 0}}]
+  [prompt response-schema
+   & {:keys [api-key _max-tokens _model _temperature max-retries] :as client-params
+      :or {max-retries 0}}]
   {:pre [(seq api-key)]}
   (loop [retries-left max-retries]
-    (let [response (llm->response {:prompt prompt
-                                   :response-schema response-schema
-                                   :api-key api-key
-                                   :max-tokens max-tokens
-                                   :model model
-                                   :temperature temperature})]
+    (let [params (merge default-client-params
+                        client-params
+                        {:prompt prompt
+                         :response-schema response-schema
+                         :api-key api-key})
+          response (llm->response params)]
       (if (and (nil? response)
                (pos? retries-left))
         (recur (dec retries-left))
