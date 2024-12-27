@@ -1,4 +1,4 @@
-(defproject org.clojars.kapil/instructor-clj "0.0.1-alpha.1"
+(defproject org.clojars.kapil/instructor-clj "0.0.1-alpha.2"
   :author "Kapil Reddy <https://www.kapilreddy.me>"
   :description "A Clojure implementation of Python library https://github.com/jxnl/instructor"
   :license {:name "The MIT License"
