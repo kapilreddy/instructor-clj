@@ -42,13 +42,21 @@
    Extracts and converts the message content into a Clojure map."
   [body]
   (try
-    (-> body
-        :choices
-        first
-        :message
-        :content
-        (cc/parse-string true))
-    (catch JsonParseException _)))
+    (let [content (-> body
+                      :choices
+                      first
+                      :message
+                      :content)]
+      (try
+        (cc/parse-string content true)
+        (catch JsonParseException _
+          ;; Handle LLM returning JSON wrapped in markdown
+          (when (re-find #"^```json" content)
+            (-> content
+                (clojure.string/replace #"^```json" "")
+                (clojure.string/replace #"```$" "")
+                clojure.string/trim
+                (cc/parse-string true))))))))
 
 
 (defn llm->response
