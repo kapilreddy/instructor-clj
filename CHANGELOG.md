@@ -1,4 +1,8 @@
 # Change Log
+## [0.0.1-alpha.3] - 2025-01-06
+### Fixed
+- FIX - Handle markdown wrapped JSON
+
 ## [0.0.1-alpha.2] - 2024-12-27
 ### Added
 - Add openai-clojure as a dependency in project.clj
