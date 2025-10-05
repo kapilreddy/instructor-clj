@@ -11,4 +11,4 @@
    [stencil "0.5.0"]
    [http-kit "2.7.0"]
    [circleci/bond "0.6.0"]
-   [net.clojars.wkok/openai-clojure "0.16.0"]])
+   [tech.unravel/litellm-clj "0.2.0"]])

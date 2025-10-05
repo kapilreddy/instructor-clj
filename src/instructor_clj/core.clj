@@ -1,6 +1,6 @@
 (ns instructor-clj.core
   (:require [cheshire.core :as cc]
-            [org.httpkit.client :as http]
+            [litellm.core :as litellm]
             [malli.core :as m]
             [malli.json-schema :as json-schema]
             [stencil.core :as sc])
@@ -25,16 +25,6 @@
    {:schema (json-schema/transform schema)}))
 
 
-(defn call-llm-api
-  "Makes a POST request to a specified LLM API endpoint with given headers and body."
-  [api-url headers body]
-  (try
-    (-> (http/post api-url {:headers headers
-                            :body body})
-        deref ;; Dereference the future
-        :body
-        (cc/parse-string true))
-    (catch JsonParseException _)))
 
 
 (defn parse-generated-body
@@ -62,21 +52,20 @@
 (defn llm->response
   "The function performs the LLM call and tries to destructure and get the actual response.
    Returns nil in cases where the LLM is not able to generate the expected response.
-
-  @TODO Add ability to plugin different LLMs
-  @TODO Getting response is brittle and not extensible for different LLMs"
-  [{:keys [prompt response-schema api-key max-tokens model temperature]}]
-  (let [api-url "https://api.openai.com/v1/chat/completions"
-        headers {"Authorization" (str "Bearer " api-key)
-                 "Content-Type" "application/json"}
-        body (cc/generate-string {"model" model
-                                  "messages"  [{"role" "system"
-                                                "content" (schema->system-prompt response-schema)}
-                                               {"role" "user"
-                                                "content" prompt}]
-                                  "temperature" temperature
-                                  "max_tokens" max-tokens})
-        body (call-llm-api api-url headers body)
+   
+   Now supports multiple LLM providers through litellm-clj."
+  [{:keys [prompt response-schema max-tokens model temperature api-key]}]
+  (let [messages [{:role :system
+                   :content (schema->system-prompt response-schema)}
+                  {:role :user
+                   :content prompt}]
+        ;; Use API key from environment if not provided
+        api-key (or api-key (System/getenv "OPENAI_API_KEY"))
+        body (litellm/completion {:model model
+                                  :messages messages
+                                  :temperature temperature
+                                  :max_tokens max-tokens
+                                  :api-key api-key})
         response (parse-generated-body body)]
     (when (m/validate response-schema response)
       response)))
@@ -84,11 +73,12 @@
 
 (defn instruct
   "Attempts to obtain a valid response from the LLM based on the given prompt and schema,
-   retrying up to `max-retries` times if necessary."
+   retrying up to `max-retries` times if necessary.
+   
+   Note: API keys can be provided via :api-key parameter or OPENAI_API_KEY environment variable."
   [prompt response-schema
    & {:keys [api-key _max-tokens _model _temperature max-retries] :as client-params
       :or {max-retries 0}}]
-  {:pre [(seq api-key)]}
   (loop [retries-left max-retries]
     (let [params (merge default-client-params
                         client-params
@@ -103,26 +93,22 @@
 
 
 (defn create-chat-completion
-  "Creates a chat completion using OpenAI API.
+  "Creates a chat completion using litellm-clj (supports multiple LLM providers).
 
-   This function takes OpenAI chat completion function as the first argument.
-
-   Second argument is a map with keys :messages, :model, and :response-model.
+   Argument is a map with keys :messages, :model, :response-model, and optionally :api-key.
    :messages should be a vector of maps, each map representing a message with keys :role and :content.
-   :model specifies the OpenAI model to use for generating completions.
-   :response-model is a map specifying the schema and name of the response model.
+   :model specifies the model to use (e.g., \"gpt-3.5-turbo\", \"claude-3-opus-20240229\", \"gemini-pro\").
+   :response-model is a Malli schema specifying the expected response structure.
+   :api-key (optional) - if not provided, will use environment variable OPENAI_API_KEY
 
-   Alternatively the api-key, organization, api-endpoint can be passed in
-   the options argument of each api function.
-   https://github.com/wkok/openai-clojure/blob/main/doc/01-usage-openai.md#options
-
-   Also, request options may be set on the underlying hato http client by adding
-   a :request map to :options for example setting the request timeout.
-   https://github.com/wkok/openai-clojure/blob/main/doc/01-usage-openai.md#request-options
+   Note: API keys can be set via environment variables:
+   - OPENAI_API_KEY for OpenAI models
+   - ANTHROPIC_API_KEY for Anthropic models
+   - GEMINI_API_KEY for Google Gemini models
+   - OPENROUTER_API_KEY for OpenRouter models
 
    Example:
    (require '[instructor-clj.core :as ic])
-   (require '[wkok.openai-clojure.api :as client])
 
    (def User
      [:map
@@ -130,24 +116,23 @@
        [:age :int]])
 
    (ic/create-chat-completion
-    client
     {:messages [{:role \"user\", :content \"Jason Liu is 30 years old\"}]
      :model \"gpt-3.5-turbo\"
      :response-model User})
 
    Returns a map with extracted information in a structured format."
-  ([chat-completion-fn client-params]
-   (create-chat-completion chat-completion-fn client-params nil))
-  ([chat-completion-fn client-params opts]
+  ([client-params]
    (let [response-model (:response-model client-params)
          messages (apply conj
-                         [{:role "system" :content (schema->system-prompt response-model)}]
+                         [{:role :system :content (schema->system-prompt response-model)}]
                          (:messages client-params))
-         client-params (-> default-client-params
-                           (merge client-params
-                                  {:messages messages})
-                           (dissoc :response-model))
-         body (chat-completion-fn client-params opts)
+         api-key (or (:api-key client-params) (System/getenv "OPENAI_API_KEY"))
+         request-params (-> default-client-params
+                            (merge client-params
+                                   {:messages messages
+                                    :api-key api-key})
+                            (dissoc :response-model))
+         body (litellm/completion request-params)
          response (parse-generated-body body)]
      (if (m/validate response-model response)
        response
@@ -157,17 +142,16 @@
 ;; Example usage
 (comment
 
-  (def api-key "<API-KEY>")
-  ;; https://github.com/jxnl/instructor/blob/cea534fd2280371d2778e0f043d3fe557cc7bc7e/instructor/process_response.py#L245C17-L250C83
-
+  ;; Set environment variable: export OPENAI_API_KEY=your-api-key
+  
   (def User
     [:map
      [:name :string]
      [:age :int]])
 
+  ;; Using the instruct function (simplified API)
   (instruct "John Doe is 30 years old."
             User
-            :api-key api-key
             :max-retries 0)
 
   (def Meeting
@@ -181,16 +165,31 @@
      [:day [:and {:description "Day of the week"}
             [:string]]]])
 
-  (= (instruct "Call Kapil on Saturday at 12pm"
-               Meeting
-               :api-key api-key
-               :model "gpt-4"
-               :max-retries 2)
-     {:action "call", :person "Kapil", :time "12pm", :day "Saturday"})
+  ;; Using OpenAI model
+  (instruct "Call Kapil on Saturday at 12pm"
+            Meeting
+            :model "gpt-4"
+            :max-retries 2
+            :api-key (System/getenv "OPENAI_API_KEY"))
+  ;; => {:action "call", :person "Kapil", :time "12pm", :day "Saturday"}
 
-  (require '[wkok.openai-clojure.api :as client])
-  (create-chat-completion client/create-chat-completion
-                          {:messages [{:role "user" :content "Call Kapil on Saturday at 12pm"}]
-                           :response-model Meeting}
-                          {:api-key api-key})
+  ;; Using create-chat-completion (more explicit)
+  (create-chat-completion
+   {:messages [{:role "user" :content "Call Kapil on Saturday at 12pm"}]
+    :model "gpt-3.5-turbo"
+    :response-model Meeting})
+
+  ;; Using Anthropic Claude
+  ;; Set environment variable: export ANTHROPIC_API_KEY=your-api-key
+  (create-chat-completion
+   {:messages [{:role "user" :content "Jason Liu is 30 years old"}]
+    :model "claude-3-opus-20240229"
+    :response-model User})
+
+  ;; Using Google Gemini
+  ;; Set environment variable: export GEMINI_API_KEY=your-api-key
+  (create-chat-completion
+   {:messages [{:role "user" :content "Jason Liu is 30 years old"}]
+    :model "gemini-pro"
+    :response-model User})
   )

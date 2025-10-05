@@ -40,16 +40,8 @@
                                 :max-retries 5)))))))
 
 
-(deftest test-instruct-pre-condition
-  (testing ":pre condition for api-key"
-    ;; Key is not provided
-    (is (thrown? AssertionError
-                 (icc/instruct "Test prompt" [:map [:key :string]])))
-
-    ;; Key is provided but empty
-    (is (thrown? AssertionError
-                 (icc/instruct "Test prompt" [:map [:key :string]] :api-key "")))
-
+(deftest test-instruct-with-api-key
+  (testing "instruct function with api-key parameter"
     ;; Key is provided and the function executes
     (let [response {:name "John Doe" :age 30}
           User [:map
