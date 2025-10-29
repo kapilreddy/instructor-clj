@@ -28,9 +28,10 @@ Built on top of [Malli](https://github.com/metosin/malli) for defining schemas a
    [:name :string]
    [:age :int]])
 
-(ic/instruct "John Doe is 30 years old."
+(ic/instruct "Kapil Reddy is almost 40 years old."
              User
-             :api-key "<API-KEY>")
+             :api-key "<API-KEY>"
+             :provider :openai)
 ; => {:name "John Doe", :age 30}
 ```
 
@@ -50,39 +51,35 @@ Built on top of [Malli](https://github.com/metosin/malli) for defining schemas a
 (ic/instruct "Call Kapil on Saturday at 12pm"
              Meeting
              :api-key api-key
+             :provider :openai
              :model "gpt-4"
              :max-retries 2)
 ; => {:action "call", :person "Kapil", :time "12pm", :day "Saturday"}
 ```
 
-Use with a OpenAI API compatible custom client like [openai-clojure](https://github.com/wkok/openai-clojure)
+Using `create-chat-completion` for more control:
 
 ```clojure
-(require '[wkok.openai-clojure.api :as client])
-```
-
-Basic usage with client
-
-```clojure
-(ic/create-chat-completion client/create-chat-completion
-                           {:messages [{:role "user" :content "Call Kapil on Saturday at 12pm"}]
-                            :response-model Meeting}
-                           {:api-key api-key})
+(ic/create-chat-completion
+ {:messages [{:role :user :content "Call Kapil on Saturday at 12pm"}]
+  :model "gpt-3.5-turbo"
+  :provider :openai
+  :response-model Meeting
+  :api-key api-key})
 ; => {:action "call", :person "Kapil", :time "12pm", :day "Saturday"}
 ```
 
-Some of the customization options provided by the client
+With additional parameters:
 
 ```clojure
-(ic/create-chat-completion client/create-chat-completion
-                           {;; Model related parameters
-                            :model "gpt-4"
-                            :temprature 0.5
-                            :messages [{:role "user" :content "Call Kapil on Saturday at 12pm"}]
-                            :response-model Meeting}
-                           {:api-key api-key
-                            ;; HTTP request parameters
-                            :request {:timeout 60000}})
+(ic/create-chat-completion
+ {:messages [{:role :user :content "Call Kapil on Saturday at 12pm"}]
+  :model "gpt-4"
+  :temperature 0.5
+  :max-tokens 1000
+  :provider :openai
+  :response-model Meeting
+  :api-key api-key})
 ```
 
 ## Installation
