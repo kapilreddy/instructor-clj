@@ -49,23 +49,41 @@
                 (cc/parse-string true))))))))
 
 
+(defn normalize-message
+  "Normalizes a message map to ensure :role is a keyword.
+   litellm-clj 0.3.0-alpha requires roles to be keywords."
+  [message]
+  (if (string? (:role message))
+    (update message :role keyword)
+    message))
+
+
+(defn normalize-messages
+  "Normalizes a collection of messages to ensure all roles are keywords."
+  [messages]
+  (mapv normalize-message messages))
+
 (defn llm->response
   "The function performs the LLM call and tries to destructure and get the actual response.
    Returns nil in cases where the LLM is not able to generate the expected response.
    
-   Now supports multiple LLM providers through litellm-clj."
-  [{:keys [prompt response-schema max-tokens model temperature api-key]}]
+   Now supports multiple LLM providers through litellm-clj 0.3.0-alpha.
+   Provider can be specified explicitly via :provider key or auto-detected from model name."
+  [{:keys [prompt response-schema max-tokens model temperature api-key provider]}]
   (let [messages [{:role :system
                    :content (schema->system-prompt response-schema)}
                   {:role :user
                    :content prompt}]
         ;; Use API key from environment if not provided
         api-key (or api-key (System/getenv "OPENAI_API_KEY"))
-        body (litellm/completion {:model model
-                                  :messages messages
-                                  :temperature temperature
-                                  :max_tokens max-tokens
-                                  :api-key api-key})
+        ;; Build request map
+        request-map {:messages messages
+                     :temperature temperature
+                     :max-tokens max-tokens}
+        ;; Build config map
+        config {:api-key api-key}
+        ;; Call litellm with new 0.3.0-alpha API
+        body (litellm/completion provider model request-map config)
         response (parse-generated-body body)]
     (when (m/validate response-schema response)
       response)))
@@ -95,11 +113,12 @@
 (defn create-chat-completion
   "Creates a chat completion using litellm-clj (supports multiple LLM providers).
 
-   Argument is a map with keys :messages, :model, :response-model, and optionally :api-key.
+   Argument is a map with keys :messages, :model, :response-model, and optionally :api-key, :provider.
    :messages should be a vector of maps, each map representing a message with keys :role and :content.
    :model specifies the model to use (e.g., \"gpt-3.5-turbo\", \"claude-3-opus-20240229\", \"gemini-pro\").
    :response-model is a Malli schema specifying the expected response structure.
    :api-key (optional) - if not provided, will use environment variable OPENAI_API_KEY
+   :provider (optional) - if not provided, will be auto-detected from model name
 
    Note: API keys can be set via environment variables:
    - OPENAI_API_KEY for OpenAI models
@@ -123,16 +142,25 @@
    Returns a map with extracted information in a structured format."
   ([client-params]
    (let [response-model (:response-model client-params)
+         ;; Normalize messages to ensure roles are keywords (required by litellm-clj 0.3.0-alpha)
+         user-messages (normalize-messages (:messages client-params))
          messages (apply conj
                          [{:role :system :content (schema->system-prompt response-model)}]
-                         (:messages client-params))
+                         user-messages)
+         model (:model client-params)
+         ;; Detect provider if not explicitly provided
+         provider (or (:provider client-params) (detect-provider model))
+         ;; Use API key from environment if not provided
          api-key (or (:api-key client-params) (System/getenv "OPENAI_API_KEY"))
-         request-params (-> default-client-params
-                            (merge client-params
-                                   {:messages messages
-                                    :api-key api-key})
-                            (dissoc :response-model))
-         body (litellm/completion request-params)
+         ;; Build request map from default params and client params
+         request-map (-> default-client-params
+                         (merge (select-keys client-params [:max-tokens :temperature]))
+                         (assoc :messages messages)
+                         (dissoc :model))
+         ;; Build config map
+         config {:api-key api-key}
+         ;; Call litellm with new 0.3.0-alpha API
+         body (litellm/completion provider model request-map config)
          response (parse-generated-body body)]
      (if (m/validate response-model response)
        response

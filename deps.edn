@@ -1,0 +1,28 @@
+{:paths ["src" "resources"]
+
+ :deps {org.clojure/clojure {:mvn/version "1.11.2"}
+        cheshire/cheshire {:mvn/version "5.12.0"}
+        metosin/malli {:mvn/version "0.15.0"}
+        stencil/stencil {:mvn/version "0.5.0"}
+        http-kit/http-kit {:mvn/version "2.7.0"}
+        tech.unravel/litellm-clj {:mvn/version "0.3.0-alpha"}}
+
+ :aliases
+ {:test {:extra-paths ["test"]
+         :extra-deps {circleci/bond {:mvn/version "0.6.0"}
+                      io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" 
+                                                              :git/sha "dfb30dd"}}}
+  
+  :integration {:extra-paths ["test"]
+                :extra-deps {circleci/bond {:mvn/version "0.6.0"}
+                             io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" 
+                                                                    :git/sha "dfb30dd"}}
+                :exec-fn cognitect.test-runner.api/test
+                :exec-args {:dirs ["test"]
+                            :patterns [".*integration.*"]}}
+  
+  :run-tests {:exec-fn cognitect.test-runner.api/test
+              :exec-args {:dirs ["test"]}}
+  
+  :build {:deps {io.github.clojure/tools.build {:mvn/version "0.9.6"}}
+          :ns-default build}}}
