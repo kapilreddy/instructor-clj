@@ -4,6 +4,7 @@
 
 
 (def api-key (System/getenv "OPENAI_API_KEY"))
+(def anthropic-api-key (System/getenv "ANTHROPIC_API_KEY"))
 
 
 (defn check-api-key
@@ -150,3 +151,20 @@
         (is (some? response) "Response should not be nil with retries")
         (is (string? (:name response)) "Name should be extracted")
         (is (int? (:age response)) "Age should be extracted")))))
+
+
+(deftest test-anthropic-provider-integration
+  (testing "instruct function with Anthropic Claude API"
+    (when anthropic-api-key
+      (let [User [:map
+                  [:name :string]
+                  [:age :int]]
+            response (icc/instruct "Emily Brown is 42 years old."
+                                   User
+                                   :api-key anthropic-api-key
+                                   :provider :anthropic
+                                   :model "claude-3-haiku-20240307"
+                                   :max-retries 0)]
+        (is (some? response) "Anthropic response should not be nil")
+        (is (= "Emily Brown" (:name response)) "Name should be extracted correctly")
+        (is (= 42 (:age response)) "Age should be extracted correctly")))))
