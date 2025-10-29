@@ -87,7 +87,7 @@ With additional parameters:
 Add to your `deps.edn`:
 
 ```clojure
-{:deps {org.clojars.kapil/instructor-clj {:mvn/version "0.0.1-alpha.3"}}}
+{:deps {org.clojars.kapil/instructor-clj {:mvn/version "1.0.0-alpha"}}}
 ```
 
 ## Development
