@@ -26,6 +26,7 @@
             response (icc/instruct "John Doe is 30 years old."
                                    User
                                    :api-key api-key
+                                   :provider :openai
                                    :model "gpt-3.5-turbo"
                                    :max-retries 0)]
         (is (some? response) "Response should not be nil")
@@ -49,6 +50,7 @@
                       {:messages [{:role "user" 
                                    :content "Call Kapil on Saturday at 12pm"}]
                        :model "gpt-3.5-turbo"
+                       :provider :openai
                        :response-model Meeting
                        :api-key api-key})]
         (is (some? response) "Response should not be nil")
@@ -65,10 +67,11 @@
                   [:name :string]
                   [:age :int]]]
         
-        ;; Test with OpenAI (gpt-3.5-turbo should auto-detect :openai provider)
+        ;; Test with OpenAI with explicit provider
         (let [response (icc/instruct "Alice Smith is 25 years old."
                                      User
                                      :api-key api-key
+                                     :provider :openai
                                      :model "gpt-3.5-turbo"
                                      :max-retries 0)]
           (is (some? response) "OpenAI response should not be nil")
@@ -102,6 +105,7 @@
             response (icc/create-chat-completion
                       {:messages [{:role "user" :content prompt}]
                        :model "gpt-4o-mini"
+                       :provider :openai
                        :response-model Person
                        :api-key api-key})]
         (is (some? response) "Response should not be nil")
@@ -122,6 +126,7 @@
         (icc/instruct "John Doe is 30 years old."
                       User
                       :api-key "invalid-api-key"
+                      :provider :openai
                       :model "gpt-3.5-turbo"
                       :max-retries 0)
         (is false "Should have thrown an exception")
@@ -139,6 +144,7 @@
             response (icc/instruct "Sarah Wilson is 28 years old."
                                    User
                                    :api-key api-key
+                                   :provider :openai
                                    :model "gpt-3.5-turbo"
                                    :max-retries 2)]
         (is (some? response) "Response should not be nil with retries")
