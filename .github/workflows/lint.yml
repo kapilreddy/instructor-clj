@@ -1,0 +1,47 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - '**.clj'
+      - '**.cljc'
+      - '**.cljs'
+      - 'deps.edn'
+      - '.github/workflows/lint.yml'
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - name: Install Clojure tools
+      uses: DeLaGuardo/setup-clojure@12.5
+      with:
+        cli: 1.11.1.1413
+    
+    - name: Cache Clojure dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.m2/repository
+          ~/.gitlibs
+          ~/.clojure
+          .cpcache
+        key: ${{ runner.os }}-clojure-${{ hashFiles('**/deps.edn') }}
+        restore-keys: |
+          ${{ runner.os }}-clojure-
+    
+    - name: Run clj-kondo linter
+      run: make lint

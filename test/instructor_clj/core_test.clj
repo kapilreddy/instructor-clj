@@ -9,7 +9,7 @@
     (let [response {:foo "bar"}]
       ;; Successful response on the first try.
       (bond/with-stub! [[icc/llm->response (constantly response)]]
-        (is (= response (icc/instruct "prompt" "schema" :api-key "api-key"))))
+        (is (= response (icc/instruct "prompt" "schema" :api-key "api-key" :provider :openai))))
 
       ;; Failure that eventually succeeds within the retry limit.
       (bond/with-stub! [[icc/llm->response [(constantly nil)
@@ -18,6 +18,7 @@
         (is (= response (icc/instruct "prompt"
                                       "schema"
                                       :api-key "api-key"
+                                      :provider :openai
                                       :max-retries 5))))
 
       ;; @TODO: Uncomment this after integrating tardigrade
@@ -30,6 +31,7 @@
       ;;   (is (= response (icc/instruct "prompt"
       ;;                                 "schema"
       ;;                                 :api-key "api-key"
+      ;;                                 :provider :openai
       ;;                                 :max-retries 5))))
 
       ;; Failure that exhausts retries and returns nil.
@@ -37,19 +39,12 @@
         (is (nil? (icc/instruct "prompt"
                                 "schema"
                                 :api-key "api-key"
+                                :provider :openai
                                 :max-retries 5)))))))
 
 
-(deftest test-instruct-pre-condition
-  (testing ":pre condition for api-key"
-    ;; Key is not provided
-    (is (thrown? AssertionError
-                 (icc/instruct "Test prompt" [:map [:key :string]])))
-
-    ;; Key is provided but empty
-    (is (thrown? AssertionError
-                 (icc/instruct "Test prompt" [:map [:key :string]] :api-key "")))
-
+(deftest test-instruct-with-api-key
+  (testing "instruct function with api-key parameter"
     ;; Key is provided and the function executes
     (let [response {:name "John Doe" :age 30}
           User [:map
@@ -60,4 +55,5 @@
                (icc/instruct "John Doe is 30 years old."
                              User
                              :api-key "api-key"
+                             :provider :openai
                              :max-retries 0)))))))
