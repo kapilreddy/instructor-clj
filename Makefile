@@ -24,12 +24,12 @@ nrepl:
 
 test:
 	@echo "Running all tests..."
-	clojure -M:test -m cognitect.test-runner
+	clojure -M:kaocha
 
 test-unit:
 	@echo "Running unit tests only..."
 	@echo "Note: Integration tests will be skipped if OPENAI_API_KEY is not set"
-	clojure -M:test -m cognitect.test-runner -d test -n instructor-clj.core-test
+	clojure -M:kaocha --focus :unit
 
 test-integration:
 	@echo "Running integration tests (requires OPENAI_API_KEY)..."
@@ -37,7 +37,7 @@ test-integration:
 		echo "⚠️  Warning: OPENAI_API_KEY not set. Tests may be skipped."; \
 		echo "Set it with: export OPENAI_API_KEY=your-key"; \
 	fi
-	clojure -M:test -m cognitect.test-runner -d test -n instructor-clj.integration-test
+	clojure -M:kaocha --focus :integration
 
 lint:
 	@echo "Running clj-kondo linter..."
