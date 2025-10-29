@@ -1,6 +1,9 @@
 # instructor-clj
 
 [![Clojars Project](https://img.shields.io/clojars/v/org.clojars.kapil/instructor-clj.svg)](https://clojars.org/org.clojars.kapil/instructor-clj)
+[![cljdoc](https://cljdoc.org/badge/org.clojars.kapil/instructor-clj)](https://cljdoc.org/d/org.clojars.kapil/instructor-clj)
+[![Test](https://github.com/kapilreddy/instructor-clj/actions/workflows/test.yml/badge.svg)](https://github.com/kapilreddy/instructor-clj/actions/workflows/test.yml)
+[![Lint](https://github.com/kapilreddy/instructor-clj/actions/workflows/lint.yml/badge.svg)](https://github.com/kapilreddy/instructor-clj/actions/workflows/lint.yml)
 
 instructor-clj is a Clojure lib inspired by [instructor](https://github.com/jxnl/instructor)
 It makes it easy to have structured output from LLMs.
