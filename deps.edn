@@ -24,5 +24,8 @@
   :run-tests {:exec-fn cognitect.test-runner.api/test
               :exec-args {:dirs ["test"]}}
   
+  :lint {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2024.03.13"}}
+         :main-opts ["-m" "clj-kondo.main"]}
+  
   :build {:deps {io.github.clojure/tools.build {:mvn/version "0.9.6"}}
           :ns-default build}}}
